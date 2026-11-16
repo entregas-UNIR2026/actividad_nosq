@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    # ✅ DEFENSA: Se elimina el mapeo de puertos "9200:9200" para evitar acceso público directo.
+    
+  mongo:
+    image: mongo:7
+    # ✅ DEFENSA: Se habilita la autenticación requerida en la base de datos.
+    command: ["--auth"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27017:27017"
+
+  fastapi-app:
+    build: ./fastapi-app
+    ports:
+      - "8000:8000"
+    environment:
+      # ✅ DEFENSA: Se inyectan credenciales de Mongo para que la API pueda conectarse.
+      MONGO_USER: admin
+      MONGO_PASS: admin123
+      MONGO_HOST: mongo
+      MONGO_DATABASE: tienda
+    depends_on:
+      - mongo
+      - elasticsearch
